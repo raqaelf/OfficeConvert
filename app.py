@@ -1,5 +1,3 @@
-# app.py
-
 from flask import Flask, request, jsonify
 import os
 import base64
@@ -16,8 +14,8 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # Celery configuration
-app.config['CELERY_BROKER_URL'] = os.getenv('REDIS_URL')
-app.config['CELERY_RESULT_BACKEND'] = os.getenv('REDIS_URL')
+app.config['CELERY_BROKER_URL'] = 'sqla+sqlite:///celerydb.sqlite'
+app.config['CELERY_RESULT_BACKEND'] = 'db+sqlite:///results.sqlite'
 
 # Initialize Celery
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
@@ -46,6 +44,28 @@ def handle_conversion_request():
     except Exception as e:
         logging.error("An error occurred during conversion: %s", str(e))
         return jsonify({'error': 'An error occurred during conversion'}), 500
+
+@app.route('/status/<task_id>', methods=['GET'])
+def get_status(task_id):
+    task = convert_task.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'status': 'Pending...'
+        }
+    elif task.state != 'FAILURE':
+        response = {
+            'state': task.state,
+            'result': task.result
+        }
+        if task.state == 'SUCCESS':
+            response['result'] = task.result
+    else:
+        response = {
+            'state': task.state,
+            'status': str(task.info)  # this is the exception raised
+        }
+    return jsonify(response)
 
 if __name__ == '__main__':
     if not os.path.exists('uploads'):

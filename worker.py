@@ -1,5 +1,3 @@
-# worker.py
-
 from celery import Celery
 import os
 import base64
@@ -9,7 +7,8 @@ from convert import convert_docx_to_pdf
 # Load environment variables from .env file
 load_dotenv()
 
-app = Celery('tasks', broker=os.getenv('REDIS_URL'))
+app = Celery('tasks', broker='sqla+sqlite:///celerydb.sqlite', backend='db+sqlite:///results.sqlite')
+
 
 @app.task
 def convert_task(docx_path):

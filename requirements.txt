@@ -1,4 +1,5 @@
 Flask
 celery
 python-dotenv
+SQLAlchemy
 pywin32 ; platform_system == 'Windows'

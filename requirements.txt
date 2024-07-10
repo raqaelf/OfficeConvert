@@ -1,0 +1,4 @@
+Flask
+celery
+python-dotenv
+pywin32 ; platform_system == 'Windows'
